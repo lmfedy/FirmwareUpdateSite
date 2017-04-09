@@ -8,6 +8,7 @@ public class Result {
 	public String model;
 	public String version;
 	public String file;
+	public String firmware;
 
 	public String getFile() {
 		return file;
@@ -19,6 +20,14 @@ public class Result {
 
 	public Result() {
 
+	}
+
+	public String getFirmware() {
+		return firmware;
+	}
+
+	public void setFirmware(String firmware) {
+		this.firmware = firmware;
 	}
 
 	public String getAction() {
