@@ -1,21 +1,11 @@
 package edu.nku.firmware.resource;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.List;
@@ -59,10 +49,10 @@ public class FirmwareUpdate {
 		oResult.setVersion("52");
 		oResult.setFirmware(appContext.getProperties().get("firmwareID").toString());
 		List<String> lines = Arrays.asList("Firwmare Update", "Firmware ID: " + oResult.getFirmware(),"Model ID: " + pModel, "Version: " + oResult.getVersion());
-		Files.write(Paths.get(UPDATE_FILE_PATH + "\\Update_" + oResult.getVersion() + ".txt"), lines);
+		Files.write(Paths.get("Update_" + oResult.getVersion() + ".txt"), lines);
 		
 		CryptoUtility crypto = (CryptoUtility) appContext.getProperties().get("CryptoUtility"); 
-		oResult.setFile(crypto.signFile(UPDATE_FILE_PATH + "\\Update_" + oResult.getVersion() + ".txt"));
+		oResult.setFile(crypto.signFile("Update_" + oResult.getVersion() + ".txt"));
 		
 		// TODO: Randomly decide whether or not a new update will be available next time
 		//  If yes, update database with the new version.
@@ -75,29 +65,9 @@ public class FirmwareUpdate {
 	@Produces(MediaType.APPLICATION_JSON)
 	public KeyResult getVendorPublicKey() {
 		KeyResult oResult = new KeyResult("publickey");
-		oResult.setPublickey((PublicKey) appContext.getProperties().get("publickey"));
+		CryptoUtility crypto = (CryptoUtility) appContext.getProperties().get("CryptoUtility");
+		oResult.setPublickey(crypto.getPublicKey());
 		return oResult;
 	}
-	
-	// Convert file to Base64 string and sign with private key
-//    private String signFile(String pFile) throws IOException, NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException{
-//    	CryptoUtility crypto = (CryptoUtility) appContext.getProperties().get("CryptoUtility"); 
-//    	String encryptedFile = crypto.encryptMessage(pFile);
-//    	
-//    	PrivateKey sPrivateKey = (PrivateKey) appContext.getProperties().get("privatekey");
-//    	 
-//    	 Signature sSignature = Signature.getInstance("SHA1withDSA", "SUN");
-//    	 sSignature.initSign(sPrivateKey);
-//    	 
-//    	 InputStream oInputStream = Files.newInputStream(Paths.get(pFile));
-//    	 BufferedInputStream oBuffInput = new BufferedInputStream(oInputStream);
-//    	 byte[] buffer = new byte[1024];
-//    	 int len;
-//    	 while ((len = oBuffInput.read(buffer)) >= 0) {
-//    		 sSignature.update(buffer, 0, len);
-//    	 };
-//    	 oBuffInput.close();    	 
-//    	 
-//         return new String(sSignature.sign());
-//    }
+
 }

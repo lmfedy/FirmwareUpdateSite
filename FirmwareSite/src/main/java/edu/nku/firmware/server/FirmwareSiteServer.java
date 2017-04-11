@@ -1,14 +1,10 @@
 package edu.nku.firmware.server;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,24 +17,29 @@ import org.glassfish.jersey.servlet.ServletContainer;
 
 import edu.nku.firmware.resource.FirmwareUpdate;
 import edu.nku.firmware.utility.CryptoUtility;
+import edu.nku.firmware.utility.DataUtility;
 import edu.nku.firmware.utility.ServiceLogger;
 
 public class FirmwareSiteServer {
 	private static final int DEFAULT_PORT = 8080;
-	private ServiceLogger logger;
 	private int serverPort;
 
-	public FirmwareSiteServer(int serverPort, ServiceLogger logger) throws Exception {
+	public FirmwareSiteServer(int serverPort) throws Exception {
 		this.serverPort = serverPort;
 
-		Server server = configureServer(logger);
+		Server server = configureServer();
 		server.start();
 		server.join();
 	}
 
-	private Server configureServer(ServiceLogger logger) throws NoSuchAlgorithmException, NoSuchProviderException {
+	private Server configureServer() throws NoSuchAlgorithmException, NoSuchProviderException {
 		
-		Map<String, Object> oPropertyMap = generateKeys(logger);
+		ServiceLogger logger = ServiceLogger.getInstance();
+		DataUtility data = DataUtility.getInstance();
+		CryptoUtility crypto = new CryptoUtility(data, logger);		
+		
+		Map<String, Object> oPropertyMap = new HashMap<>();
+		oPropertyMap.put("CryptoUtility", crypto);
 		oPropertyMap.put("firmwareID", serverPort);
 		
 		ResourceConfig resourceConfig = new ResourceConfig();
@@ -46,7 +47,6 @@ public class FirmwareSiteServer {
 		resourceConfig.register(JacksonFeature.class);
 		resourceConfig.setProperties(oPropertyMap);		
 		
-		//TODO: INSERT Vendor, Port, URL & Public Key into SQL Table
 		// TODO: Randomize models/version to put into SQL Table
 		
 		ServletContainer servletContainer = new ServletContainer(resourceConfig);
@@ -59,26 +59,9 @@ public class FirmwareSiteServer {
 		return server;
 	}
 	
-	// Generate key pair
-	private Map<String, Object> generateKeys(ServiceLogger logger) throws NoSuchAlgorithmException, NoSuchProviderException{
-//		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", "SUN");
-//		SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-//		keyGen.initialize(1024, random);
-//		KeyPair pair = keyGen.generateKeyPair();
-//		PrivateKey sPrivateKey = pair.getPrivate();
-//		PublicKey sPublicKey = pair.getPublic();
-		
-		CryptoUtility crypto = new CryptoUtility(logger);		
-
-		Map<String, Object> oPropertyMap = new HashMap<>();
-		oPropertyMap.put("CryptoUtility", crypto);
-		
-		return oPropertyMap;
-	}
 
 	public static void main(String[] args) throws Exception {
 		int serverPort = DEFAULT_PORT;
-		ServiceLogger logger =  ServiceLogger.getInstance();
 		if (args.length >= 1) {
 			try {
 				serverPort = Integer.parseInt(args[0]);
@@ -87,7 +70,7 @@ public class FirmwareSiteServer {
 			}
 		}
 
-		new FirmwareSiteServer(serverPort, logger);
+		new FirmwareSiteServer(serverPort);
 	}
 
 }
