@@ -1,5 +1,9 @@
 package edu.nku.firmware.resource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,13 +22,18 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.StringUtils;
+
+import com.google.gson.Gson;
+
 import edu.nku.firmware.utility.CryptoUtility;
 
 @Path("/firmware")
 public class FirmwareUpdate {
 
-	private String UPDATE_FILE_PATH = "C:\\Users\\Admin\\git\\FirmwareUpdateSite\\FirmwareSite\\updateFiles";
-	
+	private String UPDATE_FILE_PATH = "C:\\Users\\llyko_000\\git\\FirmwareUpdateSite\\FirmwareSite\\updateFiles";
+
 	@Context
 	private Application appContext;
 
@@ -43,21 +52,46 @@ public class FirmwareUpdate {
 	@GET
 	@Path("/update/package/{model}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Result getUpdate(@PathParam("model") String pModel) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
+	public String getUpdate(@PathParam("model") String pModel) throws IOException, InvalidKeyException,
+			NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
 		Result oResult = new Result("update");
 		oResult.setModel(pModel);
 		oResult.setVersion("52");
 		oResult.setFirmware(appContext.getProperties().get("firmwareID").toString());
-		List<String> lines = Arrays.asList("Firwmare Update", "Firmware ID: " + oResult.getFirmware(),"Model ID: " + pModel, "Version: " + oResult.getVersion());
+		List<String> lines = Arrays.asList("Firwmare Update", "Firmware ID: " + oResult.getFirmware(),
+				"Model ID: " + pModel, "Version: " + oResult.getVersion());
 		Files.write(Paths.get("Update_" + oResult.getVersion() + ".txt"), lines);
 		
-		CryptoUtility crypto = (CryptoUtility) appContext.getProperties().get("CryptoUtility"); 
-		oResult.setFile(crypto.signFile("Update_" + oResult.getVersion() + ".txt"));
+		ByteArrayOutputStream ba = loadFileAsStream("Update_" + oResult.getVersion() + ".txt");
+		oResult.setFile(StringUtils.newStringUtf8(Base64.encodeBase64(ba.toByteArray())));
+
+		// TODO: Randomly decide whether or not a new update will be available
+		// next time
+		// If yes, update database with the new version.
+
+		Gson gson = new Gson();
+		String sResponse = gson.toJson(oResult, Result.class);
 		
-		// TODO: Randomly decide whether or not a new update will be available next time
-		//  If yes, update database with the new version.
-		
-		return oResult;
+		CryptoUtility crypto = new CryptoUtility();
+		sResponse = crypto.encryptMessage(sResponse);
+
+		return sResponse;
+	}
+
+	private ByteArrayOutputStream loadFileAsStream(String fileName) throws FileNotFoundException {
+		File file = new File(fileName);
+		FileInputStream fis = new FileInputStream(file);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+		byte[] buf = new byte[1024];
+		try {
+			for (int readNum; (readNum = fis.read(buf)) != -1;) {
+				bos.write(buf, 0, readNum); // no doubt here is 0
+			}
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return bos;
 	}
 
 	@GET
@@ -65,7 +99,7 @@ public class FirmwareUpdate {
 	@Produces(MediaType.APPLICATION_JSON)
 	public KeyResult getVendorPublicKey() {
 		KeyResult oResult = new KeyResult("publickey");
-		CryptoUtility crypto = (CryptoUtility) appContext.getProperties().get("CryptoUtility");
+		CryptoUtility crypto = new CryptoUtility();
 		oResult.setPublickey(crypto.getPublicKey());
 		return oResult;
 	}
