@@ -4,11 +4,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 public class Result {
+	// I have no problem with changing these field names to match more closely
+	// with the central service conventions
 	public String action;
-	public String model;
-	public String version;
-	public String file;
-	public String firmware;
+	public String model; // Device Model
+	public String version; // Firmware Version
+	public String file; // Actual File as encoded string
+	public String firmware; // Vendor Id
 
 	public String getFile() {
 		return file;
