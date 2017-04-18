@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class Result {
 	// I have no problem with changing these field names to match more closely
 	// with the central service conventions
+	
 	public String action;
 	public String model; // Device Model
 	public String version; // Firmware Version
