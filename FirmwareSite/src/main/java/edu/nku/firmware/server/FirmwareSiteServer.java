@@ -47,7 +47,7 @@ public class FirmwareSiteServer {
 		resourceConfig.register(JacksonFeature.class);
 		resourceConfig.setProperties(oPropertyMap);		
 		
-		// TODO: Randomize models/version to put into SQL Table
+		data.updateFirmwareVersions(serverPort);
 		
 		ServletContainer servletContainer = new ServletContainer(resourceConfig);
 		ServletHolder sh = new ServletHolder(servletContainer);

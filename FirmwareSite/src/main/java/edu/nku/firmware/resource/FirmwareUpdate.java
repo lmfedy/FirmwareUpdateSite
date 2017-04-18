@@ -13,6 +13,7 @@ import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,11 +29,10 @@ import org.apache.commons.codec.binary.StringUtils;
 import com.google.gson.Gson;
 
 import edu.nku.firmware.utility.CryptoUtility;
+import edu.nku.firmware.utility.DataUtility;
 
 @Path("/firmware")
 public class FirmwareUpdate {
-
-	private String UPDATE_FILE_PATH = "C:\\Users\\llyko_000\\git\\FirmwareUpdateSite\\FirmwareSite\\updateFiles";
 
 	@Context
 	private Application appContext;
@@ -44,8 +44,9 @@ public class FirmwareUpdate {
 		Result oResult = new Result("version");
 		oResult.setFirmware(appContext.getProperties().get("firmwareID").toString());
 		oResult.setModel(pModel);
-		// TODO: Get version from database
-		oResult.setVersion("52");
+
+		DataUtility data = DataUtility.getInstance();
+		oResult.setVersion(data.getFirmwareVersion(appContext.getProperties().get("firmwareID").toString(), pModel));
 		return oResult;
 	}
 
@@ -56,7 +57,11 @@ public class FirmwareUpdate {
 			NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
 		Result oResult = new Result("update");
 		oResult.setModel(pModel);
-		oResult.setVersion("52");
+		
+		DataUtility data = DataUtility.getInstance();
+		int firmwareVersion = data.getFirmwareVersion(appContext.getProperties().get("firmwareID").toString(), pModel);
+		oResult.setVersion(firmwareVersion);
+		
 		oResult.setFirmware(appContext.getProperties().get("firmwareID").toString());
 		List<String> lines = Arrays.asList("Firwmare Update", "Firmware ID: " + oResult.getFirmware(),
 				"Model ID: " + pModel, "Version: " + oResult.getVersion());
@@ -65,9 +70,9 @@ public class FirmwareUpdate {
 		ByteArrayOutputStream ba = loadFileAsStream("Update_" + oResult.getVersion() + ".txt");
 		oResult.setFile(StringUtils.newStringUtf8(Base64.encodeBase64(ba.toByteArray())));
 
-		// TODO: Randomly decide whether or not a new update will be available
-		// next time
-		// If yes, update database with the new version.
+		Random rand = new Random();
+		if(rand.nextInt(100) %2 == 0)
+			data.tickUpFirmwareVersion(oResult.getFirmware(), pModel, firmwareVersion++);
 
 		Gson gson = new Gson();
 		String sResponse = gson.toJson(oResult, Result.class);
@@ -76,6 +81,13 @@ public class FirmwareUpdate {
 		sResponse = crypto.encryptMessage(sResponse);
 
 		return sResponse;
+	}
+	
+	@GET
+	@Path("/newVersion")
+	public void UpdateAllFirmware() {
+		DataUtility data = DataUtility.getInstance();
+		data.updateFirmwareVersions(Integer.parseInt(appContext.getProperties().get("firmwareID").toString()));
 	}
 
 	private ByteArrayOutputStream loadFileAsStream(String fileName) throws FileNotFoundException {

@@ -9,7 +9,7 @@ public class Result {
 	
 	public String action;
 	public String model; // Device Model
-	public String version; // Firmware Version
+	public int version; // Firmware Version
 	public String file; // Actual File as encoded string
 	public String firmware; // Vendor Id
 
@@ -49,12 +49,12 @@ public class Result {
 		this.model = model;
 	}
 
-	public String getVersion() {
+	public int getVersion() {
 		return version;
 	}
 
-	public void setVersion(String version) {
-		this.version = version;
+	public void setVersion(int i) {
+		this.version = i;
 	}
 
 	public Result(String pAction) {
