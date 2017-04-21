@@ -3,7 +3,7 @@ package edu.nku.firmware.resource;
 import java.security.PublicKey;
 
 public class KeyResult {
-	String action;
+	transient String  action;
 	byte[] publickey;
 	
 	public KeyResult() {
