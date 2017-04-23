@@ -7,7 +7,7 @@ public class Result {
 	// I have no problem with changing these field names to match more closely
 	// with the central service conventions
 	
-	public transient String action;
+	public String action;
 	public String model; // Device Model
 	public int version; // Firmware Version
 	public String file; // Actual File as encoded string
